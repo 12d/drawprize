@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<button id="draw">draw prize</button>
+<script src="s/lib/mootools.js" type="text/javascript"></script>
+<script src="s/lib/lucky.js" type="text/javascript"></script>
+<script src="s/com/base.js" type="text/javascript"></script>
+<script type="text/javascript">
+    var Handlers = {
+        drawStart: function(){
+            console.log('start');
+        },
+        drawEnd: function(rs){
+            console.log(rs);
+        },
+        drawSuccess: function(){
+            console.log('success');
+        },
+        error: function(){
+            console.log('error');
+        }
+    };
+
+    var base = new Lucky.Base({
+        url: 'test.json',
+        trigger: $('draw'),
+        noCache: false,
+        //events
+        onDrawStart: Handlers.drawStart,
+        onDrawEnd: Handlers.drawEnd,
+        onDrawSuccess: Handlers.drawSuccess,
+        onError: Handlers.error
+    });
+</script>
+</body>
+</html>
