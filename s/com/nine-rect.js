@@ -39,6 +39,7 @@
             self.setDirection(self.options.direction);
             self.__rectsMap = [];
             self._rectPosMap();
+            self._addMasks();
         },
         /**
          * default setting for nice-rect
@@ -52,6 +53,7 @@
             trigger: NULL,
             cols: 3,
             rows: 3,
+            maskClass: '',
             acceleration: 80,
             maxDuration: 800,
             minDuration: 80,
@@ -66,7 +68,7 @@
 
             if(!self.isPlaying){
                 self._playIndex=from||self._actived||0;
-                self._loop();
+                self._loop(true); //play immediately
                 self.isPlaying = true;
             }
         },
@@ -83,15 +85,16 @@
         _isPlaying: false,
         stop: function(){
             //this._activeIndex = this._currentStep = 0;
+            var actived = this._actived;
             this.isPlaying = false;
             this.__isStop = false;
             clearTimeout(this._animator);
-            this.fireEvent('complete', this._actived);
+            this.fireEvent('complete', [actived, this._masks[actived]]);
         },
         _calculateDuration: function(){
             var self = this,
                 opts = self.options,
-                acceleration = opts.acceleration,
+//                acceleration = opts.acceleration,
                 duration = self.__duration;
             if(!self.__isStop){
                 if(duration>=opts.minDuration){
@@ -110,7 +113,31 @@
             self.__duration = duration;
 
         },
-        _loop: function(){
+        _addMasks: function(){
+            var self = this,
+                masks = [],
+                container = self.options.container,
+                tplEle = new Element('div.'+self.options.maskClass),
+                ele = null,
+                rectsMap = self.__rectsMap;
+
+            rectsMap.each(function(rect){
+                ele = tplEle.cloneNode();
+                ele.setStyles({
+                    left: rect.x,
+                    top: rect.y
+                });
+                masks.push(ele);
+                ele.inject(container);
+            });
+            self._masks = masks;
+        },
+        /**
+         *
+         * @param {Boolean} isImmediate, need to play immediately.
+         * @private
+         */
+        _loop: function(isImmediate){
             var self = this;
 
             self._animator = setTimeout(function (){
@@ -123,7 +150,7 @@
                     return;
                 }
                 self._loop();
-            }, self.__duration);
+            }, isImmediate?0:self.__duration);
         },
         _moveCursor: function(){
             var cursor = this.options.cursor;

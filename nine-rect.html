@@ -9,8 +9,16 @@
             top:0
         }
         #nine{position: relative; width:650px; height:430px;}
-        .cursor{background: red; position: absolute;}
-        .current{background: blue; position: absolute;}
+        .cursor{background: url("current.png") no-repeat 15px 2px; position: absolute;}
+        .active{background: none;}
+
+        .slide,.mask{width:217px; height:143px; overflow: hidden;position: absolute;}
+        .slide img{position: absolute;left: -110px;top: -86px;}
+
+        .mask{background:red; opacity: 0.2}
+        .removed{background: none;}
+
+        .popup{background:#fff; padding: 5px;border: 1px solid #fffafa;}
     </style>
 </head>
 <body>
@@ -21,13 +29,91 @@
 <script src="s/com/nine-rect.js" type="text/javascript"></script>
 <div id="nine">
     <img src="s/img/nine-rect.jpg" alt="九宫格"/>
-    <div class="cursor" id="cursor">1</div>
+    <div class="cursor slide" id="cursor">
+        <img src="1.png" alt="九宫格" id="photo" style="-webkit-transform:scale(2)"/>
+    </div>
     <!--<div class="current">2</div>-->
 </div>
 
 <script type="text/javascript">
+    function ShutterEffect(speed, target, onFinish){
+        var settings = {
+            ROTATION_SPEED: 10,
+            SCALE_SPEED:0.1,
+            ROTATION_FROM: 1,
+            SCALE_TO:0.6,
+            SCALE_FROM:2
+        };
+        this.speed = speed;
+        this.target = target;
+        this.settings = settings;
+        ;
+        this.onFinish = onFinish||function(){};
+      ;
+    }
+    ShutterEffect.prototype = {
+
+        play: function(){
+            var self = this;
+            self._init()
+            self._animator = setInterval(function (){
+                self._step();
+            }, self.speed);
+        },
+        stop: function(){
+            this.onFinish();
+            clearInterval(this._animator);
+        },
+        _init: function(){
+            var settings = this.settings;
+            this._rotationVal = settings.ROTATION_FROM;
+            this._scaleVal = settings.SCALE_FROM;
+            this.isZoomOut = true;
+        },
+        _transform: function(dom){
+            //dom.setStyle('-webkit-transform', 'rotate('+(this._rotationVal)+'deg) scale('+this._scaleVal+')');
+            Lucky.transform(dom, this._rotationVal, this._scaleVal);
+        },
+        _step: function(){
+            var settings = this.settings;
+            this.isZoomOut ? this.zoomOut() : this.zoomIn();
+            this._transform(this.target);
+            this._rotationVal += settings.ROTATION_SPEED;
+            if(this._scaleVal <= settings.SCALE_TO){
+                this.isZoomOut = false;
+            }
+
+        },
+        constructor: ShutterEffect,
+        /**
+         * 放大
+         */
+        zoomIn: function(){
+            var settings = this.settings;
+            this._scaleVal += this.settings.SCALE_SPEED;
+            if(this._scaleVal >= settings.SCALE_FROM){
+                this.stop();
+            }
+        },
+        /**
+         * 缩小
+         */
+        zoomOut: function(){
+            var settings = this.settings;
+            this._scaleVal -= settings.SCALE_SPEED;
+        }
+    };
+
+    var shutter = new ShutterEffect(25, $('photo'), function(){
+
+        Mbox.openLite('sa阿萨德阿萨德发手动发生的发手动',1000);
+    });
+
     var Handlers = {
+        currentMask:null,
         drawStart: function(){
+            $('cursor').removeClass('active');
+            Handlers.currentMask && Handlers.currentMask.removeClass('removed');
             this.play();
             console.log('start');
         },
@@ -35,10 +121,14 @@
             this.gotoAndStop(rs.msg.prizeCode);
         },
         drawSuccess: function(){
+
             console.log('success');
         },
-        drawComplete: function(index){
-            console.log('complete'+index);
+        drawComplete: function(index, mask){
+            $('cursor').addClass('active');
+            shutter.play();
+            mask.addClass('removed');
+            Handlers.currentMask=mask;
         },
         error: function(){
             console.log('error');
@@ -46,9 +136,10 @@
     };
 
     var nine = new Lucky.NineRect({
-        url: 'test.json',
+        url: 'http://localhost:1237/DrawPrize/test.json',
         trigger: $('draw'),
         cursor: $('cursor'),
+        maskClass: 'mask',
         noCache: true,
         container: $('nine'),
         //events
@@ -57,6 +148,7 @@
         onComplete: Handlers.drawComplete,
         onError: Handlers.error
     });
+    console.log(nine);
 </script>
 </body>
 </html>
